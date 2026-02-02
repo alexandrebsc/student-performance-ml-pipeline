@@ -1,24 +1,33 @@
-# ruff: noqa: D103, T201
 """Script for Exploratory Data Analysis (EDA)."""
 
+import logging
 import warnings
 
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 from scipy.stats import shapiro
+
 from utils.constants import Col
-from utils.etl import get_clean_df
+from utils.pede_passos_loader import PedePassosLoader
+
+logger = logging.getLogger(__name__)
 
 
-def main() -> None:
-    df = get_clean_df()
+def main() -> None:  # noqa: D103
+    logging.basicConfig(level=logging.INFO)
+
+    pd.set_option("display.max_columns", None)
+
+    df = PedePassosLoader().load()
 
     df_analysis(df)
     df_vizulization(df)
 
 
 def df_analysis(df: pd.DataFrame) -> None:
+    """Log execution of the PEDE Passos dataset analysis."""
+
     def shapiro_test() -> None:
         warnings.filterwarnings(
             "ignore",
@@ -28,36 +37,35 @@ def df_analysis(df: pd.DataFrame) -> None:
 
         stat, p = shapiro(df[Col.inde])
 
-        print(f"Statistics (W): {stat:.4f}\nValue p: {p:.4f}")
+        logger.info("Shapiro test statistics (W): %.4f | Value p: %.4f", stat, p)
 
     def null_analysis() -> None:
         df_nulls = df.isna()
-
-        print("Quantidade de nulos: ", df_nulls.sum())
+        logger.info("Quantidade de nulos: %s", df_nulls.sum())
 
     def duplicated_analysis() -> None:
         df_duplicated = df.duplicated()
 
-        print("Quantidade de duplicados: ", df_duplicated.sum())
-        print(df[df_duplicated])
+        duplicated_num = df_duplicated.sum()
+        logger.info("Quantidade de duplicados: %s", duplicated_num)
+        if duplicated_num > 0:
+            logger.info("Linhas duplicadas:\n %s", df[df_duplicated])
 
-    print("> Info:\n")
     df.info()
-    print("\n")
-    print("> Análise dados nulos:\n\n")
+
+    logger.info("DF sample:\n\n%s\n\n", df.head(3))
+    logger.info("DF statistics:\n\n%s\n\n", df.describe())
+
     null_analysis()
-    print("> Análise dados duplicados:\n\n")
     duplicated_analysis()
-    print(f"> Df sample:\n\n{df.head(3)}", end="\n\n")
-    print(f"> Df statistics:\n\n{df.describe()}", end="\n\n")
-    print("> Shapiro test on percentual variation by day:\n\n")
     shapiro_test()
-    print("\n")
 
 
 def df_vizulization(df: pd.DataFrame) -> None:
+    """Plot histograms and a correlation graph for the PEDE Passos dataset."""
+
     def hist_plot() -> None:
-        _, axs = plt.subplots(5, 1, figsize=(8, 8))
+        _, axs = plt.subplots(4, 1, figsize=(8, 8))
 
         df[[Col.iaa, Col.inde]].plot.hist(bins=100, alpha=0.5, ax=axs[0])
         axs[0].set_title("iaa vs inde")

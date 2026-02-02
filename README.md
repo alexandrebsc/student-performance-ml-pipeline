@@ -1,21 +1,26 @@
 # Student Performance Prediction – Applied Machine Learning Project
 
-This repository contains an end-to-end **machine learning project** focused on predicting student performance indicators based on academic and behavioral features.
+This repository contains an end-to-end **applied machine learning project** focused on predicting student academic performance using historical educational and behavioral data.
 
-The project demonstrates a complete workflow including **data ingestion, exploratory analysis, feature preparation, model training, evaluation, and inference**, along with a simple **Streamlit application** for interactive predictions.
+The project is structured as a **reproducible ML pipeline**, covering data ingestion, preprocessing, model selection via grid search, evaluation against strong baselines, and inference — with an optional **Streamlit application** for interactive predictions.
 
-> ⚠️ This project is intended for educational and portfolio purposes.
+> ⚠️ This project is intended for educational, analytical, and portfolio purposes.
 
 ## 📌 Project Overview
 
-Educational institutions often need data-driven insights to better understand factors influencing student performance.  
-This project explores how historical student data can be used to **predict performance indicators** using supervised machine learning techniques.
+Educational institutions often need early, data-driven signals to better understand student development and intervene proactively.
 
-The main goals are:
-- Apply structured data preparation (ETL)
-- Train and evaluate regression models
-- Provide reproducible and interpretable results
-- Offer a simple interface for model inference
+This project predicts a student’s **INDE (Educational Development Index)** using a limited set of indicators that are available *before the end of the academic year*.
+The focus is not on deterministic outcomes, but on **estimating the current trajectory** of a student.
+
+Key objectives:
+
+* Build a clean and modular ML pipeline
+* Use realistic feature availability constraints
+* Compare model performance against naïve baselines
+* Provide interpretable, actionable predictions
+* Maintain reproducibility through deterministic splits and seeds
+
 
 ## 🎯 Practical Motivation & Real-World Context
 
@@ -70,29 +75,38 @@ By doing so, the model reinforces the importance of engagement and self-assessme
 
 ## 📊 Dataset
 
-The dataset used in this project is provided in the `data/` directory.
+The dataset is stored in the `data/` directory.
 
-- **File:** `pede_passos.csv`
-- **Description:** Structured dataset containing academic and behavioral attributes related to student performance
-- **Target:** Student performance index (INDE)
+* **File:** `pede_passos.csv`
+* **Structure:** Multi-year student academic and behavioral indicators
+* **Target:** `INDE` (Educational Development Index)
 
-Basic preprocessing steps include:
-- Handling missing values
-- Feature selection
-- Data normalization (where applicable)
+### Data Processing Highlights
+
+The raw dataset is:
+
+* Cleaned for corrupted and invalid rows
+* Normalized across multiple academic years (2020–2022)
+* Unpivoted into a **student-year format**
+* Filtered to exclude undergraduate-level phases
+
+The final modeling dataset contains **only primary and middle-school phases**, ensuring conceptual consistency.
 
 
-## 🧠 Model & Approach
+## 🧠 Modeling Approach
 
-- **Model:** Random Forest Regressor
-- **Problem Type:** Regression
-- **Training Strategy:** Train/test split
-- **Evaluation Metrics:**
-  - Mean Absolute Error (MAE)
-  - Mean Squared Error (MSE)
-  - R² Score
+* **Problem Type:** Regression
+* **Model:** Random Forest Regressor
+* **Selection Strategy:** Manual grid search using a validation set
+* **Evaluation:** Train / Validation / Test split
+* **Baselines:** Mean predictor evaluated on all splits
 
-The Random Forest model was chosen due to its robustness to non-linear relationships and minimal feature scaling requirements.
+### Why Random Forest?
+
+* Handles non-linear relationships well
+* Robust to feature scaling imperfections
+* Requires minimal assumptions about data distributions
+* Performs reliably on moderate-sized tabular datasets
 
 
 ## 📊 Exploratory Data Analysis (EDA)
@@ -146,18 +160,30 @@ These can be found in the `figs/` directory.
 ## 🏗️ Project Structure
 
 ```
-├── data/                 # Dataset
-├── models/               # Trained model artifacts
-├── scr/                  # Source code
-│   ├── run_eda.py        # Exploratory data analysis
-│   ├── run_train.py     # Model training
-│   ├── run_predict.py   # Batch prediction
-│   ├── run_app.py       # Streamlit app
-│   └── utils/            # ETL and constants
-├── figs/                 # Generated plots
-├── requirements.txt
-├── README.md
-└── LICENSE
+│   .gitignore
+│   LICENSE
+│   README.md
+│   requirements.txt
+│   
+├─── data/                  # Dataset
+├─── figs/                  # Generated plots
+├─── models/                # Trained model artifacts
+│
+└───src                     # Source code
+    │   run_app.py          # Streamlit app
+    │   run_eda.py          # Exploratory data analysis
+    │   run_train.py        # Model training
+    │   __init__.py
+    │
+    └───utils               # ETL and constants
+        │   constants.py
+        │   evaluator.py
+        │   pede_passos_loader.py
+        │   pede_passos_pipeline.py
+        │   pede_passos_preprocessor.py
+        │   random_forest_regressor_model.py
+        │   __init__.py
+        └───
 ```
 
 
@@ -178,59 +204,53 @@ pip install -r requirements.txt
 
 ### Run Exploratory Data Analysis
 ```bash
-python scr/run_eda.py
+python src/run_eda.py
 ```
 
 ### Train the Model
 ```bash
-python scr/run_train.py
-```
-
-### Run Predictions
-```bash
-python scr/run_predict.py
+python src/run_train.py
 ```
 
 ### Launch Streamlit App
 ```bash
-streamlit run scr/run_app.py
+streamlit run src/run_app.py
 ```
 
 
 ## 🧪 Results & Model Performance
 
-A **Random Forest Regressor** was trained using a grid search strategy to select optimal hyperparameters.
+The model is trained using a **train / validation / test split**, with all evaluations compared against a **mean baseline** trained on the training target distribution.
 
 **Best hyperparameters:**
-- Number of trees: 100
+- Number of trees: 25
 - Max features: `sqrt`
 - Max depth: 12
 
-### Performance Metrics
+### 🔹 Model Performance
 
-| Dataset | MAE | MSE | R² | Max Absolute Error |
--|
-| Train | 0.028 | 0.0013 | 0.911 | 0.129 |
-| Test | 0.044 | 0.0031 | 0.751 | 0.220 |
-| Full Comparison | 0.032 | 0.0018 | 0.876 | 0.220 |
+| Split      | MAE    | MSE     | R²     |
+| ---------- | ------ | ------- | ------ |
+| Train      | 0.0262 | 0.00115 | 0.9214 |
+| Validation | 0.0414 | 0.00291 | 0.7938 |
+| Test       | 0.0438 | 0.00303 | 0.7558 |
 
-### Baseline Comparison
+### 🔹 Mean Baseline Performance
 
-As a baseline, a naïve model that always predicts the **mean target value** would yield an R² score close to **0.0**.
-
-Compared to this baseline:
-- The trained model explains approximately **75% of the variance** on unseen data
-- MAE remains low relative to the target scale (0–10)
+| Split      | MAE    | MSE     | R²      |
+| ---------- | ------ | ------- | ------- |
+| Train      | 0.0953 | 0.01460 | 0.0000  |
+| Validation | 0.0941 | 0.01410 | -0.0001 |
+| Test       | 0.0910 | 0.01254 | -0.0095 |
 
 ### Interpretation
 
-These results indicate that the model:
-- Captures meaningful relationships between academic indicators and student performance
-- Generalizes reasonably well given the dataset size
-- Shows limited overfitting, as reflected by the train–test performance gap
+* The model explains **~76% of the variance on unseen test data**
+* Errors are small relative to the INDE scale (0–10)
+* Performance is stable across validation and test sets
+* Baseline comparison confirms the model captures **meaningful signal**
 
-The observed maximum error suggests that while predictions are generally accurate, **individual outliers remain**, which is expected in educational performance data.
-
+The train–test gap indicates **limited overfitting**, which is expected and acceptable given dataset size and feature constraints.
 
 
 ## ⚠️ Limitations
@@ -238,7 +258,7 @@ The observed maximum error suggests that while predictions are generally accurat
 - Although a **grid search strategy** is implemented to explore multiple hyperparameter configurations, the search space is intentionally limited and does not guarantee a globally optimal model.
 - The dataset size is relatively small, which constrains model generalization to unseen populations.
 - A **data augmentation strategy** was tested to increase training data volume; however, it did not lead to measurable performance improvements and was therefore not used in the final training pipeline.
-- No cross-validation was applied; model evaluation relies on a single train/test split.
+- No cross-validation was applied; model evaluation relies on a single train/validation/test split.
 - The project does not include production-level concerns such as monitoring, automated retraining, or model drift detection.
 
 
